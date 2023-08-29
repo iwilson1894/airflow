@@ -56,6 +56,9 @@ class BaseSQLToGCSOperator(BaseOperator):
     :param export_format: Desired format of files to be exported. (json, csv or parquet)
     :param stringify_dict: Whether to dump Dictionary type objects
         (such as JSON columns) as a string. Applies only to CSV/JSON export format.
+    :param stringify_list: Whether to dump List type objects
+        (such as JSON columns) as a string. Applies only to CSV/JSON export format.  
+        Writes double quotes in lists of JSON to retain JSON compatability.
     :param field_delimiter: The delimiter to be used for CSV files.
     :param null_marker: The null marker to be used for CSV files.
     :param gzip: Option to compress file for upload (does not apply to schemas).
@@ -112,6 +115,7 @@ class BaseSQLToGCSOperator(BaseOperator):
         approx_max_file_size_bytes: int = 1900000000,
         export_format: str = "json",
         stringify_dict: bool = False,
+        stringify_list: bool = False,
         field_delimiter: str = ",",
         null_marker: str | None = None,
         gzip: bool = False,
@@ -137,6 +141,7 @@ class BaseSQLToGCSOperator(BaseOperator):
         self.approx_max_file_size_bytes = approx_max_file_size_bytes
         self.export_format = export_format.lower()
         self.stringify_dict = stringify_dict
+        self.stringify_list = stringify_list
         self.field_delimiter = field_delimiter
         self.null_marker = null_marker
         self.gzip = gzip
@@ -214,7 +219,7 @@ class BaseSQLToGCSOperator(BaseOperator):
     def convert_types(self, schema, col_type_dict, row) -> list:
         """Convert values from DBAPI to output-friendly formats."""
         return [
-            self.convert_type(value, col_type_dict.get(name), stringify_dict=self.stringify_dict)
+            self.convert_type(value, col_type_dict.get(name), stringify_dict=self.stringify_dict, stringify_list=self.stringify_list)
             for name, value in zip(schema, row)
         ]
 

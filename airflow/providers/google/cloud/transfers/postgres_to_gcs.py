@@ -112,7 +112,7 @@ class PostgresToGCSOperator(BaseSQLToGCSOperator):
         self.cursor_itersize = cursor_itersize
 
     def _unique_name(self):
-        return f"{self.dag_id}__{self.task_id}__{uuid.uuid4()}" if self.use_server_side_cursor else None
+        return str(uuid.uuid4()).replace('-','') if self.use_server_side_cursor else None
 
     def query(self):
         """Queries Postgres and returns a cursor to the results."""
@@ -132,7 +132,7 @@ class PostgresToGCSOperator(BaseSQLToGCSOperator):
             "mode": "REPEATED" if field[1] in (1009, 1005, 1007, 1016) else "NULLABLE",
         }
 
-    def convert_type(self, value, schema_type, stringify_dict=True):
+    def convert_type(self, value, schema_type, stringify_dict=True, stringify_list=True):
         """
         Take a value from Postgres and convert it to a value safe for JSON/Google Cloud Storage/BigQuery.
 
@@ -158,6 +158,8 @@ class PostgresToGCSOperator(BaseSQLToGCSOperator):
             )
             return str(time_delta)
         if stringify_dict and isinstance(value, dict):
+            return json.dumps(value)
+        if stringify_list and isinstance(value, list):
             return json.dumps(value)
         if isinstance(value, Decimal):
             return float(value)
